@@ -6,20 +6,13 @@ from collecting import *
 from helpers import Searcher, Post, load_post
 
 
-def get_idx(e, rs):
-    for i, r in enumerate(rs):
-        if r[0] == e:
-            return i
-    return -1
-
 def main():
     print("----------------------")
     print("main() function called")
     
-    
     posts = []
     
-    with open("posts.txt", "r") as f:
+    with open("filtered-posts.txt", "r") as f:
         lines = f.readlines()
         lines = [l.strip() for l in lines]
         objs = [json.loads(line) for line in lines]
@@ -30,12 +23,10 @@ def main():
     username = "entityNoticing"
     password = "x!0123456789"
     searcher = Searcher(username, password)
-    subreddits = ["deeplearning", "chatgptpro", "aipromptprogramming", "machinelearning",  "gpt_4", "gpt3", "chatgpt", "chatgptcoding", "openai"]
+    subreddits = ["chatgptpro", "machinelearning",  "gpt_4", "gpt3","deeplearning", "aipromptprogramming", "chatgpt", "chatgptcoding", "openai"]
 
     for post in posts:
         searcher.vis.add(post.url)
-        
-
     
     posts = collect(subreddits, searcher)
 
@@ -43,13 +34,14 @@ def main():
     entity_counts = obtain_entity_counts(posts)
     rankings1, rankings2 = rank(entity_counts)
 
-    with open("rankings.txt", "w+") as f:
-        f.write("Entity,MentionsRank,GrowthRank\n")
-        for e in entity_counts:
-            rank_1 = get_idx(e, rankings1)
-            rank_2 = get_idx(e, rankings2)
-            items = [e, str(rank_1), str(rank_2)]
-            f.write(",".join(items) + "\n")
+    with open("rankings1.txt", "w+") as f:
+        f.write("Entity,WeeksMentioned\n")
+        for e, wm in rankings1:
+            f.write(e + "," + str(wm) + "\n")
+    with open("rankings2.txt", "w+") as f:
+        f.write("Entity,WeeklyGrowth\n")
+        for e, wg in rankings2:
+            f.write(e + "," + str(wg) + "\n")
     return
 
 

@@ -5,6 +5,157 @@ import numpy as np
 from datetime import datetime
 
 
+DEFAULT_KEYWORDS = [
+    "OpenAI",
+    "ChatGPT",
+    "GPT 4",
+    "GPT 3",
+    "GPT4",
+    "GPT3",
+    "AGI",
+    "AutoGPT",
+    "ML",
+    "DL",
+    "NN",
+    "NLP",
+    "NLP",
+    "RL",
+    "CV",
+    "DS",
+    "Robotics",
+    "Automation",
+    "Algorithm",
+    "Predictive Analytics",
+    "Image Recognition",
+    "Speech Recognition",
+    "Sentiment Analysis",
+    "Virtual Assistant",
+    "Chatbot",
+    "Recommendation Systems",
+    "Decision Trees",
+    "Data Mining",
+    "Pattern Recognition",
+    "Autonomous Vehicles",
+    "Expert Systems",
+    "Knowledge Representation",
+    "Computer Graphics",
+    "Cognitive Computing"
+]
+
+AVOID = list(["if", "we", "and", "but", "then", "of", "for", "in", "when", "what", "why", "who", "is", "at", "because", "from", "stand", "paying", "that", "open", "scale", "some"])
+AVOID += [letter for letter in string.ascii_lowercase]
+AVOID = set(AVOID)
+
+
+common_words = [
+"the",
+"of",
+"and",
+"to",
+"in",
+"is",
+"you",
+"that",
+"it",
+"he",
+"was",
+"for",
+"on",
+"are",
+"as",
+"with",
+"his",
+"they",
+"at",
+"be",
+"this",
+"from",
+"have",
+"or",
+"by",
+"one",
+"had",
+"not",
+"but",
+"what",
+"all",
+"were",
+"we",
+"when",
+"your",
+"can",
+"said",
+"there",
+"use",
+"an",
+"each",
+"which",
+"she",
+"do",
+"how",
+"their",
+"if",
+"will",
+"up",
+"other",
+"about",
+"out",
+"many",
+"then",
+"them",
+"these",
+"so",
+"some",
+"her",
+"would",
+"make",
+"like",
+"him",
+"into",
+"time",
+"has",
+"look",
+"two",
+"more",
+"write",
+"go",
+"see",
+"number",
+"no",
+"way",
+"could",
+"people",
+"my",
+"than",
+"first",
+"water",
+"been",
+"call",
+"who",
+"oil",
+"its",
+"now",
+"find",
+"long",
+"down",
+"day",
+"did",
+"get",
+"come",
+"made",
+"may",
+"part"
+]
+
+common_words += [s.capitalize() for s in common_words]
+
+
+def ends_in_common(s):
+    for word in common_words:
+        if s == s[:len(s)-len(word)] + word:
+            return True
+    return False
+
 
 def calculate_days_ago(date_str):
     current_date = datetime.now().date()
@@ -74,6 +225,8 @@ def get_entity_counts(posts, entities: list[str]):
 
     entity_counts = {entity: [0] * 100 for entity in entities}
     for post in posts:
+        if not post.date:
+            continue
         weeksAgo = calculate_days_ago(post.date) // 7
         if weeksAgo > 4:
             continue
@@ -89,10 +242,27 @@ def get_entity_counts(posts, entities: list[str]):
 
 def obtain_entity_counts(posts: list=[]):
     # strings that can be considered entities
-    entities = get_entities(posts)
+    raw_entities = get_entities(posts)
+    raw_entities = [s for s in raw_entities if s and s.lower() not in AVOID and not ends_in_common(s)]
+    raw_entities += DEFAULT_KEYWORDS
+
+    entities = []
     # Number of weekly mentions for each entity
+    for i in range(len(raw_entities)):
+        add = True
+        curr = raw_entities[i].lower()
+        for j in range(len(raw_entities)):
+            if i != j:
+                if curr.find(raw_entities[j].lower()) == 0:
+                    add = False
+                    break
+        if add:
+            entities.append(raw_entities[i])
+
+    entities = raw_entities
+
     entity_counts = get_entity_counts(posts, entities)
-    print(entity_counts)
+
     return entity_counts
     
 
@@ -121,6 +291,7 @@ def rank(entity_counts):
     # avg growth
     stat2 = get_stat2(entities)
     stat2 = sorted(stat2, key=lambda x: x[1], reverse=True)
+    stat2 = list(map(list, stat2))
     return stat1, stat2
     
     
